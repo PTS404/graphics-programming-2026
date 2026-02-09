@@ -41,7 +41,7 @@ void ParticlesApplication::Initialize()
     // Initialize the mouse position with the current position of the mouse
     m_mousePosition = GetMainWindow().GetMousePosition(true);
 
-    // (todo) 02.2: Enable the GL_PROGRAM_POINT_SIZE feature on the device
+    // 02.2: Enable the GL_PROGRAM_POINT_SIZE feature on the device
     glEnable(GL_PROGRAM_POINT_SIZE);
 
     // (todo) 02.3: Enable the GL_BLEND feature on the device
