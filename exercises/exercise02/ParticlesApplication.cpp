@@ -44,8 +44,9 @@ void ParticlesApplication::Initialize()
     // 02.2: Enable the GL_PROGRAM_POINT_SIZE feature on the device
     glEnable(GL_PROGRAM_POINT_SIZE);
 
-    // (todo) 02.3: Enable the GL_BLEND feature on the device
-
+    // 02.3: Enable the GL_BLEND feature on the device
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE);
 
     // We need to enable V-sync, otherwise the framerate would be too high and spawn multiple particles in one click
     GetDevice().SetVSyncEnabled(true);
