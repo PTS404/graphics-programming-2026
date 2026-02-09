@@ -1,4 +1,3 @@
-
 set(libraries glad itugl glfw ${APPLE_LIBRARIES})
 
 file(GLOB_RECURSE target_inc "*.h" )
