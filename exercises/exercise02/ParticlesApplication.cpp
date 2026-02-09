@@ -14,16 +14,20 @@ struct Particle
     glm::vec2 position;
     // (todo) 02.X: Add more vertex attributes
     float size;
+
+    float birth;
+    float duration;
 };
 
 // List of attributes of the particle. Must match the structure above
-const std::array<VertexAttribute, 2> s_vertexAttributes =
+const std::array<VertexAttribute, 4> s_vertexAttributes =
 {
     VertexAttribute(Data::Type::Float, 2), // position
     // (todo) 02.X: Add more vertex attributes
     VertexAttribute(Data::Type::Float, 1), // size
+    VertexAttribute(Data::Type::Float, 1), // birth
+    VertexAttribute(Data::Type::Float, 1), // duration
 };
-
 
 ParticlesApplication::ParticlesApplication()
     : Application(1024, 1024, "Particles demo")
@@ -67,7 +71,10 @@ void ParticlesApplication::Update()
         // (todo) 02.X: Compute new particle attributes here
         float size = RandomRange(5.0f, 20.0f);
 
-        EmitParticle(mousePosition, size);
+        float birth = GetCurrentTime();
+        float duration = RandomRange(1.0f, 2.0f);
+
+        EmitParticle(mousePosition, size, birth, duration);
     }
 
     // save the mouse position (to compare next frame and obtain velocity)
@@ -83,7 +90,7 @@ void ParticlesApplication::Render()
     m_shaderProgram.Use();
 
     // (todo) 02.4: Set CurrentTime uniform
-
+    m_shaderProgram.SetUniform(m_currentTimeLocation, GetCurrentTime());
 
     // (todo) 02.6: Set Gravity uniform
 
@@ -141,15 +148,20 @@ void ParticlesApplication::InitializeShaders()
     {
         std::cout << "Error linking shaders" << std::endl;
     }
+
+    // Set CurrentTimeLocation
+    m_currentTimeLocation = m_shaderProgram.GetUniformLocation("CurrentTime");
 }
 
-void ParticlesApplication::EmitParticle(const glm::vec2& position, float size)
+void ParticlesApplication::EmitParticle(const glm::vec2& position, float size, float birth, float duration)
 {
     // Initialize the particle
     Particle particle;
     particle.position = position;
     // (todo) 02.X: Set the value for other attributes of the particle
     particle.size = size;
+    particle.birth = birth;
+    particle.duration = duration;
 
     // Get the index in the circular buffer
     unsigned int particleIndex = m_particleCount % m_particleCapacity;
