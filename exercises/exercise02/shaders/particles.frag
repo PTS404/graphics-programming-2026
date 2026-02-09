@@ -2,8 +2,8 @@
 
 out vec4 FragColor;
 
-// (todo) 02.5: Add Color input variable here
-
+// 02.5: Add Color input variable here
+in vec4 ParticleColor;
 
 void main()
 {
@@ -11,5 +11,5 @@ void main()
     vec2 coord = gl_PointCoord * 2 - 1; // remap to (-1, 1)
 	float alpha = 1 - length(coord);
 
-	FragColor = vec4(1, 1, 1, alpha);
+	FragColor = vec4(ParticleColor.rgb, ParticleColor.a * alpha);
 }

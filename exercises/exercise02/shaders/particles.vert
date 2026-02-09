@@ -8,8 +8,9 @@ layout (location = 2) in float ParticleBirth;
 layout (location = 3) in float ParticleDuration;
 uniform float CurrentTime;
 
-// (todo) 02.5: Add Color output variable here
-
+// 02.5: Add Color output variable here
+layout (location = 4) in vec4 ParticleColorIn;
+out vec4 ParticleColor;
 
 // (todo) 02.X: Add uniforms
 
@@ -27,4 +28,6 @@ void main()
 	{
 		gl_PointSize = ParticleSize;
 	}
+
+	ParticleColor = ParticleColorIn;
 }
