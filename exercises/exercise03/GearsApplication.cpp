@@ -51,16 +51,18 @@ void GearsApplication::Render()
     // (todo) 03.5: Set the view projection matrix from the camera. Once set, we will use it for all the objects
 
 
-    // (todo) 03.1: Draw large gear at the center
+    // 03.1: Draw large gear at the center
+    glm::mat4 centerGearMatrix(1.0f);
     float angle = 1.0f * GetCurrentTime();
     glm::vec3 axis = glm::vec3(0.0f, 0.0f, 1.0f);
     glm::mat4 rotationMatrix = glm::rotate(angle, axis);
 
-    glm::mat4 centerGearMatrix(1.0f);
     DrawGear(m_largeGear, rotationMatrix, Color(1.0f, 1.0f, 1.0f));
 
     // (todo) 03.2: Draw medium gear to the right
-
+    glm::mat4 translationMatrix = glm::translate(glm::vec3(0.75f, 0.0f, 0.0f)); // Moves the gear to the right
+    glm::mat4 rotationMatrix2 = glm::rotate(-angle * 2.0f, axis); // Rotates the gear in the opposite direction with double speed (proportional)
+    DrawGear(m_mediumGear, translationMatrix*rotationMatrix2, Color(0.0f, 1.0f, 1.0f));
 
     // (todo) 03.3: Draw small gear at the top-left corner
 
@@ -99,7 +101,7 @@ void GearsApplication::InitializeShaders()
 
     m_colorUniform = m_shaderProgram.GetUniformLocation("Color");
 
-    // (todo) 03.1: Find the WorldMatrix uniform location
+    // 03.1: Find the WorldMatrix uniform location
     m_worldMatrixUniform = m_shaderProgram.GetUniformLocation("WorldMatrix");
 
     // (todo) 03.5: Find the ViewProjMatrix uniform location
