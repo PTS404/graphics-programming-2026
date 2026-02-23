@@ -59,7 +59,7 @@ void GearsApplication::Render()
 
     DrawGear(m_largeGear, rotationMatrix, Color(1.0f, 1.0f, 1.0f));
 
-    // (todo) 03.2: Draw medium gear to the right
+    // 03.2: Draw medium gear to the right
     glm::mat4 translationMatrix = glm::translate(glm::vec3(0.75f, 0.0f, 0.0f)); // Moves the gear to the right
     glm::mat4 rotationMatrix2 = glm::rotate(-angle * 2.0f, axis); // Rotates the gear in the opposite direction with double speed (proportional)
     DrawGear(m_mediumGear, translationMatrix*rotationMatrix2, Color(0.0f, 1.0f, 1.0f));
