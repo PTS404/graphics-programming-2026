@@ -2,6 +2,8 @@
 
 #include <cassert>
 #include <stb_image.h>
+#include <vector>
+#include <cmath>
 
 TextureCubemapLoader::TextureCubemapLoader()
 {
@@ -52,7 +54,7 @@ TextureCubemapObject TextureCubemapLoader::Load(const char* path)
 
             // Adjust mip levels
             textureCubemap.SetParameter(TextureObject::ParameterFloat::MinLod, 0.0f);
-            float maxLod = 1.0f + std::floorf(std::log2f(static_cast<float>(std::max(width, height))));
+            float maxLod = 1.0f + std::floor(std::log2(static_cast<float>(std::max(width, height))));
             textureCubemap.SetParameter(TextureObject::ParameterFloat::MaxLod, maxLod);
         }
 
