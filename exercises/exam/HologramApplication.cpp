@@ -21,7 +21,8 @@ HologramApplication::HologramApplication()
     m_resolutionUniform(0),
     m_timeUniform(0),
     m_worldMatrixUniform(0),
-    m_viewProjectionUniform(0)
+    m_viewProjectionUniform(0),
+    m_cameraPositionUniform(0)
 {
 }
 
