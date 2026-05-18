@@ -37,6 +37,7 @@ void HologramApplication::Update()
 {
     Application::Update();
     m_elapsedTime += GetDeltaTime();
+    m_rotation += m_rotationSpeed * GetDeltaTime();
 }
 
 void HologramApplication::Render()
@@ -44,20 +45,36 @@ void HologramApplication::Render()
     GetDevice().Clear(true, Color(0.0f, 0.0f, 0.0f), true, 1.0f);
     m_hologramShader.Use();
 
-    // Set uniforms
+    // Get resolution
     int width, height;
     GetMainWindow().GetDimensions(width, height);
 
+    // Camera position
+    glm::vec3 cameraPosition(0.0f, 0.0f, 3.0f);
+
+    // Set uniforms
     glm::vec2 resolution(static_cast<float>(width), static_cast<float>(height));
     m_hologramShader.SetUniform(m_resolutionUniform, resolution);
     m_hologramShader.SetUniform(m_timeUniform, m_elapsedTime);
-    glm::mat4 worldMatrix = glm::identity<glm::mat4>();
+    m_hologramShader.SetUniform(m_cameraPositionUniform, cameraPosition);
+
+    // World Matrix
+    glm::mat4 rotate = glm::rotate(m_rotation, glm::vec3(0, 1, 0));
+    glm::mat4 scale = glm::scale(glm::vec3(1.0f));
+
+    glm::mat4 worldMatrix = rotate * scale;
     m_hologramShader.SetUniform(m_worldMatrixUniform, worldMatrix);
-    glm::mat4 viewProjectionMatrix = glm::identity<glm::mat4>();
+
+    // Projection Matrix
+    glm::mat4 projection = glm::perspective(glm::radians(60.0f), width / float(height), 0.1f, 100.0f);
+    glm::mat4 view = glm::lookAt(cameraPosition, glm::vec3(0, 0, 0), glm::vec3(0, 1, 0));
+
+    glm::mat4 viewProjectionMatrix = projection * view;
     m_hologramShader.SetUniform(m_viewProjectionUniform, viewProjectionMatrix);
 
+
     // Draw mesh
-    m_quadMesh->DrawSubmesh(0);
+    m_mesh->DrawSubmesh(0);
 
     Application::Render();
 }
@@ -65,23 +82,51 @@ void HologramApplication::Render()
 void HologramApplication::InitializeGeometry()
 {
     // Create mesh
-    m_quadMesh = std::make_unique<Mesh>();
+    m_mesh = std::make_unique<Mesh>();
 
     // Create rendering
     VertexFormat vertexFormat;
     vertexFormat.AddVertexAttribute<float>(3, VertexAttribute::Semantic::Position);
 
-    // Vertices
-    std::vector<glm::vec3> vertices = {
-        {-1.0f, -1.0f, 0.0f},
-        {1.0f, -1.0f, 0.0f},
-        {1.0f, 1.0f, 0.0f},
-        {-1.0f, 1.0f, 0.0f}
-    };
+    // Vertices & Indices
+    std::vector<glm::vec3> vertices;
+    std::vector<unsigned int> indices;
 
-    std::vector<unsigned short> indices {0,1,2,2,3,0};
+    // Sphere smoothness
+    const int bands = 32;
+    const int segments = 64;
 
-    m_quadMesh->AddSubmesh<glm::vec3, unsigned short>(
+    // Create sphere vertices and indices
+    for (int i = 0; i <= bands; ++i) {
+        float phi = (float)i / bands * glm::pi<float>();
+
+        for (int j = 0; j <= segments; ++j) {
+            float theta = (float)j / segments * glm::two_pi<float>();
+
+            float x = sin(phi) * cos(theta);
+            float y = cos(phi);
+            float z = sin(phi) * sin(theta);
+
+            vertices.emplace_back(x, y, z);
+        }
+    }
+    for (int i = 0; i < bands; ++i) {
+        for (int j = 0; j < segments; ++j) {
+            int row1 = i * (segments + 1);
+            int row2 = (i + 1) * (segments + 1);
+
+            indices.push_back(row1 + j);
+            indices.push_back(row2 + j);
+            indices.push_back(row1 + j + 1);
+
+            indices.push_back(row1 + j + 1);
+            indices.push_back(row2 + j);
+            indices.push_back(row2 + j + 1);
+        }
+    }
+
+    // Create submesh
+    m_mesh->AddSubmesh<glm::vec3, unsigned int>(
         Drawcall::Primitive::Triangles,
         vertices, indices,
         vertexFormat.LayoutBegin(static_cast<int>(vertices.size()), false),
@@ -108,6 +153,7 @@ void HologramApplication::InitializeShaders()
     m_timeUniform = m_hologramShader.GetUniformLocation("Time");
     m_worldMatrixUniform = m_hologramShader.GetUniformLocation("WorldMatrix");
     m_viewProjectionUniform = m_hologramShader.GetUniformLocation("ViewProjectionMatrix");
+    m_cameraPositionUniform = m_hologramShader.GetUniformLocation("CameraPosition");
 }
 
 // Taken from exercise03

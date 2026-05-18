@@ -29,16 +29,12 @@ private:
     // Camera
     Camera m_camera;
 
-    // Planet Object
-    // std::unique_ptr<Mesh> m_planetMesh;
-    // ShaderProgram m_planetShader;
-
     // Rotation
-    // float m_rotation = 0.0f;
-    // float m_rotationSpeed = glm::radians(30.0f);
+    float m_rotation = 0.0f;
+    float m_rotationSpeed = glm::radians(30.0f);
 
     // Mesh
-    std::unique_ptr<Mesh> m_quadMesh;
+    std::unique_ptr<Mesh> m_mesh;
 
     // Hologram Shader
     ShaderProgram m_hologramShader;
@@ -48,6 +44,8 @@ private:
     ShaderProgram::Location m_timeUniform;
     ShaderProgram::Location m_worldMatrixUniform;
     ShaderProgram::Location m_viewProjectionUniform;
+    ShaderProgram::Location m_cameraPositionUniform;
+
 
     // Time
     float m_elapsedTime = 0.0f;
