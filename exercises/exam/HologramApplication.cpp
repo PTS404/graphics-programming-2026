@@ -139,10 +139,10 @@ void HologramApplication::InitializeGeometry()
 void HologramApplication::InitializeShaders()
 {
     Shader vertexShader(Shader::Type::VertexShader);
-    LoadAndCompileShader(vertexShader, "shaders/hologram.vert");
+    LoadAndCompileShader(vertexShader, "shaders/planet.vert");
 
     Shader fragmentShader(Shader::Type::FragmentShader);
-    LoadAndCompileShader(fragmentShader, "shaders/hologram.frag");
+    LoadAndCompileShader(fragmentShader, "shaders/planet.frag");
 
     if (!m_hologramShader.Build(vertexShader, fragmentShader)) {
         std::cout << "Error building shader" << std::endl;
