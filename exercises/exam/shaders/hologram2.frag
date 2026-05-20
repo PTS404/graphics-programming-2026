@@ -26,45 +26,109 @@ mat2 rotation2d(float angle) {
     return mat2(c, s, -s, c);
 }
 
+float createSphere(vec3 position, float radius) {
+    return length(position) - radius;
+}
+
+float createCone(vec3 position, float height, float radius) {
+    float q = length(position.xz);
+    return max(q - radius, position.y - height);
+}
+
+float raymarch(vec3 cameraOrigin, vec3 rayDirection, out vec3 hitPosition) {
+    float totalDistance = 0.0;
+    hitPosition = cameraOrigin;
+
+    for (int i = 0; i < 100; i++) {
+        vec3 p = cameraOrigin + rayDirection * totalDistance;
+
+        p.xz *= rotation2d(Time * 0.6);
+        p.xy *= rotation2d(Time * 0.6 * 0.3);
+
+        float sphere = createSphere(p, 0.5);
+        float distance = sphere;
+
+        if (distance < 0.001) {
+            hitPosition = p;
+            return totalDistance;
+        }
+
+        totalDistance += distance;
+        if (totalDistance > 10.0) break;
+    }
+    return -1.0;
+}
+
 void main()
 {
-    vec3 N = normalize(Normal);
+    vec4 position = gl_FragCoord;
 
-    // View direction
-    vec3 viewDirection = normalize(CameraPosition - FragPosition);
+    // UV
+    vec2 uv = (position.xy - 0.5 * Resolution.xy) / Resolution.y;
 
-    // Fresnel
-    float fresnel = 1.0 - max(dot(N, viewDirection), 0.0);
-    fresnel = pow(fresnel, 2);
+    // Camera
+    vec3 cameraDirection = CameraPosition - FragPosition;
+    vec3 rayDirection = normalize(vec3(uv, -1.0));
 
-    // Rotation
-    vec3 position = FragPosition;
-    float rotationSpeed = Time * 0.8;
-    position.xz = rotation2d(rotationSpeed) * position.xz;
-    position.xy = rotation2d(rotationSpeed * 0.35) * position.xy;
+    // Raymarching
+    vec3 hitPosition;
+    float distance = raymarch(CameraPosition, rayDirection, hitPosition);
 
-    // Noise
-    float noisex = noise(position.x * 8.0 + Time * 0.7);
-    float noisey = noise(position.y * 8.0 - Time * 0.5);
-    float noisez = noise(position.z * 8.0 + Time * 0.3);
-    float noise = (noisex + noisey + noisez) / 3.0;
+    // Base color
+    vec3 baseColor = vec3(0.0);
+    float alpha = 0.0;
+
+    // If object is hit, calculate effects
+    if (distance > 0.0) {
+        vec3 normal = normalize(Normal);
+        vec3 viewDirection = normalize(CameraPosition - hitPosition);
+
+        // Fresnel
+        float fresnel = 1.0 - max(dot(normal, viewDirection), 0.0);
+        fresnel = pow(fresnel, 2.5);
+        fresnel = 0.3 + 1.25 * fresnel;
+
+        // Lighting
+        vec3 lightDirection = normalize(vec3(0.5, 1.0, 0.5));
+        float diff = max(dot(normal, lightDirection), 0.0) * 0.5 + 0.5;
+
+        // Color
+        vec3 color = mix(
+            vec3(0.0, 0.6, 1.0), // blue
+            vec3(0.0, 1.0, 0.9), // cyan
+            fresnel
+        );
+        color += vec3(0.1, 0.05, 0.0) * sin(hitPosition.y * 20.0 + Time * 3.0);
+
+        baseColor = color * diff * fresnel;
+        alpha = fresnel;
+
+        // Edge Glow
+        float edgeGlow = pow(fresnel, 3.0) * 1.5;
+        baseColor += vec3(0.3, 0.7, 1.0) * edgeGlow;
+    }
 
     // Scanline
-//    float scanline = 0.8 + 0.2 * sin(Time * 6.0 + FragPosition.y * 20.0);
-    float scanline = 0.8 + 0.2 * sin(Time * 6.0 + FragPosition.y * 20.0);
-//    float scanline = 0.75 + 0.25 * sin(Time * 6.0 + FragPosition.y * 24.0);
+    float scanline = sin(position.y * 2.5 - Time * 4.0) * 0.5 + 0.5;
+    float fineScanline = sin(position.y * 0.8 + Time * 2.0) * 0.5 + 0.5;
+    float scanlineMask = 0.7 + 0.3 * pow(scanline, 1.5) * fineScanline;
 
-    // Glow
-    float baseGlow = 0.18 + 0.35 * noise;
-    float edgeGlow = 0.85 * fresnel;
-//    float glow = fresnel * scanline;
-    float glow = (baseGlow + edgeGlow) * scanline;
+    // Hologram Flicker
+    float flicker = 1.0;
+    flicker *= 0.92 + 0.08 * sin(Time * 60.0); // high
+    flicker *= 0.95 + 0.05 * noise(Time * 8.0); // low
+    flicker *= 1.0- 0.3 * step(0.93, hash(floor(Time * 4.0))); // randomness
 
-    // Color
-    vec3 cyan = vec3(0.0, 0.7, 1.0);
-    vec3 red = vec3(1.0, 0.2, 0.2);
-    vec3 color = cyan * glow;
+    // Finalize color
+    baseColor *= scanlineMask;
+    alpha *= scanlineMask;
+    baseColor *= flicker;
+    alpha *= flicker;
 
-    // Apply effects
-    FragColor = vec4(color, clamp(glow, 0.0, 1.0));
+    FragColor = vec4(baseColor, clamp(alpha, 0.0, 1.0));
+
+
+    // Rotation
+//    vec3 position = FragPosition;
+
 }

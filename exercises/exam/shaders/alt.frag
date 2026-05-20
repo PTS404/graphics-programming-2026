@@ -16,10 +16,6 @@ float hash(float n) {
     return fract(sin(n) * 43758.5453123);
 }
 
-float hash2(vec2 p) {
-    return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453123);
-}
-
 // --- Noise for organic variation ---
 float noise(float x) {
     float i = floor(x);
@@ -37,11 +33,6 @@ mat2 rot2D(float a) {
 // --- SDF primitives ---
 float sdSphere(vec3 p, float r) {
     return length(p) - r;
-}
-
-float sdBox(vec3 p, vec3 b) {
-    vec3 q = abs(p) - b;
-    return length(max(q, 0.0)) + min(max(q.x, max(q.y, q.z)), 0.0);
 }
 
 float sdTorus(vec3 p, vec2 t) {
@@ -96,7 +87,7 @@ float sceneSDF(vec3 p) {
     float core = smin(octa, sphere, 0.2);
 
     // Combine everything
-    float d = core;
+    float d = sphere;
     d = min(d, torus);
     d = min(d, torus2);
     d = min(d, sat1);
@@ -132,42 +123,11 @@ float raymarch(vec3 ro, vec3 rd, out vec3 hitPos) {
     return -1.0;
 }
 
-// --- Glitch: determines if a glitch event is active ---
-float glitchAmount(float time) {
-    // Glitches happen at pseudo-random intervals
-    float g = 0.0;
-    // Large glitch every ~3-5 seconds
-    float trigger = step(0.85, hash(floor(time * 1.2)));
-    g += trigger * hash(floor(time * 15.0));
-    // Small micro-glitches more frequently
-    float micro = step(0.92, hash(floor(time * 7.0)));
-    g += micro * 0.3 * hash(floor(time * 30.0));
-    return g;
-}
-
-// --- Glitch UV displacement ---
-vec2 glitchUV(vec2 uv, float time) {
-    float g = glitchAmount(time);
-    if (g > 0.01) {
-        // Horizontal band displacement
-        float band = step(0.5, hash(floor(uv.y * 12.0) + floor(time * 8.0)));
-        uv.x += band * g * 0.15 * (hash(floor(time * 20.0)) - 0.5);
-        // Occasional vertical shift
-        float vShift = step(0.7, hash(floor(time * 6.0) + 7.0));
-        uv.y += vShift * g * 0.04;
-    }
-    return uv;
-}
-
 void main() {
     // ---- UV setup ----
     vec2 fragCoord = gl_FragCoord.xy;
     vec2 uv = (fragCoord - 0.5 * Resolution.xy) / Resolution.y;
     vec2 uvOrig = uv;
-
-    // ---- Apply glitch displacement to UV ----
-    float glitch = glitchAmount(Time);
-    uv = glitchUV(uv, Time);
 
     // ---- Camera setup ----
     vec3 ro = vec3(0.0, 0.0, 3.2); // camera origin
@@ -222,35 +182,6 @@ void main() {
     holoColor *= scanMask;
     alpha *= scanMask;
 
-    // ---- Chromatic aberration ----
-    // Offset red and blue channels slightly for that holographic fringe
-    float caStrength = 0.004 + glitch * 0.02; // stronger during glitches
-    vec2 uvR = uvOrig + vec2(caStrength, 0.0);
-    vec2 uvB = uvOrig - vec2(caStrength, 0.0);
-
-    // Re-raymarch for offset channels (simplified: approximate with UV shift)
-    vec3 roR = ro;
-    vec3 rdR = normalize(vec3(glitchUV(uvR, Time), -1.0));
-    vec3 hitR;
-    float distR = raymarch(roR, rdR, hitR);
-
-    vec3 roB = ro;
-    vec3 rdB = normalize(vec3(glitchUV(uvB, Time), -1.0));
-    vec3 hitB;
-    float distB = raymarch(roB, rdB, hitB);
-
-    // Apply chromatic aberration to red and blue channels
-    if (distR > 0.0) {
-        vec3 nR = estimateNormal(hitR);
-        float fR = pow(1.0 - max(dot(nR, normalize(ro - hitR)), 0.0), 2.5);
-        holoColor.r = mix(holoColor.r, (0.3 + 0.7 * fR) * scanMask, 0.5);
-    }
-    if (distB > 0.0) {
-        vec3 nB = estimateNormal(hitB);
-        float fB = pow(1.0 - max(dot(nB, normalize(ro - hitB)), 0.0), 2.5);
-        holoColor.b = mix(holoColor.b, (0.3 + 0.7 * fB) * scanMask, 0.5);
-    }
-
     // ---- Global flicker ----
     // Simulate power instability: occasional brightness dips
     float flicker = 1.0;
@@ -261,48 +192,7 @@ void main() {
     holoColor *= flicker;
     alpha *= flicker;
 
-    // ---- Glitch color corruption ----
-    if (glitch > 0.3) {
-        // During heavy glitches, inject random color bands
-        float bandY = floor(fragCoord.y / 8.0);
-        float bandHash = hash(bandY + floor(Time * 12.0));
-        if (bandHash > 0.7) {
-            holoColor = mix(holoColor, vec3(0.0, 1.0, 0.8) * 1.5, glitch * 0.4);
-        }
-        if (bandHash < 0.15) {
-            holoColor *= 0.1; // dark bands
-        }
-    }
-
-    // ---- Holographic base glow (ground plane suggestion) ----
-    float groundGlow = exp(-abs(uv.y + 0.6) * 8.0) * 0.3;
-    groundGlow *= 0.5 + 0.5 * sin(uv.x * 40.0 + Time * 2.0); // interference pattern
-    vec3 glowColor = vec3(0.1, 0.4, 0.8) * groundGlow;
-
-    // ---- Ambient holographic particles (floating motes) ----
-    float particles = 0.0;
-    for (int i = 0; i < 8; i++) {
-        float fi = float(i);
-        vec2 ppos = vec2(
-        sin(Time * 0.5 + fi * 1.7) * 0.4,
-        sin(Time * 0.3 + fi * 2.3) * 0.6
-        );
-        float d = length(uv - ppos);
-        particles += 0.002 / (d * d + 0.001);
-    }
-    vec3 particleColor = vec3(0.2, 0.6, 1.0) * particles * 0.03;
-
-    // ---- Compose final color ----
-    vec3 finalColor = holoColor + glowColor + particleColor;
-
-    // Subtle vignette
-    float vig = 1.0 - 0.3 * length(uvOrig * 0.8);
-    finalColor *= vig;
-
-    // Tone mapping: prevent overblown highlights
-    finalColor = finalColor / (1.0 + finalColor);
-
     // Output with slight overall transparency for compositing feel
-    float finalAlpha = clamp(alpha + groundGlow + particles * 0.1, 0.0, 1.0);
-    FragColor = vec4(finalColor, finalAlpha);
+    float finalAlpha = clamp(alpha, 0.0, 1.0);
+    FragColor = vec4(holoColor, finalAlpha);
 }
