@@ -6,8 +6,11 @@ uniform vec2 Resolution;
 uniform float Time;
 uniform vec3 CameraPosition;
 
+uniform vec3 BaseColor;
+uniform vec3 AccentColor;
 uniform float PlanetSize;
 uniform float RingSize;
+uniform float TerrainScale;
 uniform float AnimationSpeed;
 
 // Randomization functions
@@ -33,12 +36,12 @@ float sphere(vec3 position, float radius) {
 }
 
 // Creates ring
-float ring(vec3 position, vec2 t) {
+float ring(vec3 position, vec2 thickness) {
     float flatten = 4.0;
 
     position.y *= flatten;
-    vec2 q = vec2(length(position.xz) - t.x, position.y);
-    return (length(q) - t.y) / flatten;
+    vec2 q = vec2(length(position.xz) - thickness.x, position.y);
+    return (length(q) - thickness.y) / flatten;
 }
 
 // Create object
@@ -55,11 +58,11 @@ float createObject(vec3 position) {
     float terrainNoise =
         noise(normalizedPosition.x * 5.0 + Time * 0.5) * 0.5 *
         noise(normalizedPosition.y * 10.0 - Time * 0.3) * 0.25 *
-        noise(normalizedPosition.z * 20.0 + Time * 0.7) * 0.125;
+        noise(normalizedPosition.z * 20.0 + Time * 0.1) * 0.125;
     terrainNoise = terrainNoise / (0.5 * 0.25 * 0.125);
 
     float baseRadius = PlanetSize;
-    float heightVariation = 0.02 * terrainNoise;
+    float heightVariation = TerrainScale * terrainNoise;
 
     // Create sphere
     float sphere = sphere(spherePosition, baseRadius + heightVariation);
@@ -79,9 +82,9 @@ float createObject(vec3 position) {
 vec3 estimateNormal(vec3 position) {
     vec2 offset = vec2(0.001, 0.0);
     return normalize(vec3(
-        createObject(position + offset.xyy) - createObject(position - offset.xyy),
-        createObject(position + offset.yxy) - createObject(position - offset.yxy),
-        createObject(position + offset.yyx) - createObject(position - offset.yyx)
+        createObject(position + offset.xyy) - createObject(position - offset.xyy), // x-axis
+        createObject(position + offset.yxy) - createObject(position - offset.yxy), // y-axis
+        createObject(position + offset.yyx) - createObject(position - offset.yyx)  // z-axis
     ));
 }
 
@@ -111,7 +114,7 @@ void main() {
     vec2 position = gl_FragCoord.xy;
     vec2 uv = (position - 0.5 * Resolution.xy) / Resolution.y;
 
-    // Camera
+    // Ray direction
     vec3 rayDirection = normalize(vec3(uv, -1.0));
 
     // Raymarching
@@ -120,7 +123,6 @@ void main() {
 
     // Color
     vec3 baseColor = vec3(0.0);
-    float alpha = 0.0;
 
     // If object is hit, calculate effects
     if (distance > 0.0) {
@@ -128,37 +130,34 @@ void main() {
         vec3 viewDirection = normalize(CameraPosition - hitPosition);
 
         // Fresnel
-        float fresnel = pow(1.0 - max(dot(normal, viewDirection), 0.0), 2.5);
-        fresnel = 0.3 + 0.7 * fresnel;
+        float fresnel = pow(1.0 - max(dot(normal, viewDirection), 0.0), 3.0);
+        fresnel = 0.25 + 0.75 * fresnel;
 
         // Hologram color
         vec3 mixColor = mix(
-            vec3(0.0, 0.6, 1.0),  // blue
-            vec3(0.0, 1.0, 0.9),  // cyan
+            BaseColor,
+            AccentColor,
             fresnel
         );
 
         baseColor = mixColor * fresnel;
-        alpha = fresnel;
 
         // Add edge glow
         float edgeGlow = pow(fresnel, 3.0) * 1.5;
-        baseColor += vec3(0.3, 0.7, 1.0) * edgeGlow;
+        baseColor += AccentColor * edgeGlow;
     }
 
     // Scanline
-    float scanline = sin(position.y * 2.5 - Time * 4.0) * 0.5 + 0.5;
-    float fineScanline = sin(position.y * 0.8 + Time * 2.0) * 0.5 + 0.5;
-    float scanlineMask = 0.7 + 0.3 * pow(scanline, 1.5) * fineScanline;
+    float scanline = sin(position.y * 2.5 - Time * 4.0) * 0.75;
+    float fineScanline = sin(position.y * 0.8 + Time * 2.0) * 0.75;
+    float scanlineMask = 0.7 + 0.3 * pow(scanline, 2.0) * fineScanline;
 
     // Hologram flicker on y-axis (sin)
-    float flicker = 1.0 * (0.90 + 0.025 * sin(Time * 60.0));
+    float flicker = 0.9 + 0.025 * sin(Time * 60.0);
 
     // Finalize output
     baseColor *= scanlineMask;
-    alpha *= scanlineMask;
     baseColor *= flicker;
-    alpha *= flicker;
 
-    FragColor = vec4(baseColor, clamp(alpha, 0.0, 1.0));
+    FragColor = vec4(baseColor, 0.0);
 }

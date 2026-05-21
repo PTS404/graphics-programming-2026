@@ -23,8 +23,11 @@ HologramApplication::HologramApplication()
     m_worldMatrixUniform(0),
     m_viewProjectionUniform(0),
     m_cameraPositionUniform(0),
+    m_baseColorUniform(0),
+    m_accentColorUniform(0),
     m_planetSizeUniform(0),
     m_ringSizeUniform(0),
+    m_terrainScaleUniform(0),
     m_animationSpeedUniform(0)
 {
 }
@@ -69,8 +72,11 @@ void HologramApplication::Render()
     m_hologramShader.SetUniform(m_cameraPositionUniform, cameraPosition);
 
     // Set interaction uniforms
+    m_hologramShader.SetUniform(m_baseColorUniform, m_baseColor);
+    m_hologramShader.SetUniform(m_accentColorUniform, m_accentColor);
     m_hologramShader.SetUniform(m_planetSizeUniform, m_planetSize);
     m_hologramShader.SetUniform(m_ringSizeUniform, m_ringSize);
+    m_hologramShader.SetUniform(m_terrainScaleUniform, m_terrainScale);
     m_hologramShader.SetUniform(m_animationSpeedUniform, m_animationSpeed);
 
     // World Matrix
@@ -93,8 +99,11 @@ void HologramApplication::Render()
     // User Interaction
     m_imGui.BeginFrame();
     ImGui::GetIO().FontGlobalScale = 2.0f;
+    ImGui::ColorEdit3("Base Color", &m_baseColor[0]);
+    ImGui::ColorEdit3("Accent Color", &m_accentColor[0]);
     ImGui::SliderFloat("Planet Size", &m_planetSize, 0.05f, 1.0f);
     ImGui::SliderFloat("Ring Size", &m_ringSize, 0.0f, 2.0f);
+    ImGui::SliderFloat("Terrain Scale", &m_terrainScale, 0.0f, 0.1f);
     ImGui::Separator();
     ImGui::SliderFloat("Animation Speed", &m_animationSpeed, 0.0f, 5.0f);
     m_imGui.EndFrame();
@@ -182,8 +191,11 @@ void HologramApplication::InitializeShaders()
     m_cameraPositionUniform = m_hologramShader.GetUniformLocation("CameraPosition");
 
     // Interaction Uniforms
+    m_baseColorUniform = m_hologramShader.GetUniformLocation("BaseColor");
+    m_accentColorUniform = m_hologramShader.GetUniformLocation("AccentColor");
     m_planetSizeUniform = m_hologramShader.GetUniformLocation("PlanetSize");
     m_ringSizeUniform = m_hologramShader.GetUniformLocation("RingSize");
+    m_terrainScaleUniform = m_hologramShader.GetUniformLocation("TerrainScale");
     m_animationSpeedUniform = m_hologramShader.GetUniformLocation("AnimationSpeed");
 }
 
