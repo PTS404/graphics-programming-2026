@@ -98,8 +98,9 @@ float raymarch(vec3 cameraOrigin, vec3 rayDirection, out vec3 hitPosition) {
             hitPosition = position;
             return totalDistance;
         }
-
         totalDistance += distance;
+
+        // If distance is too far break loop for performance
         if (totalDistance > 10.0) break;
     }
     return -1.0;
