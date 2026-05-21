@@ -9,6 +9,7 @@
 #include <memory>
 
 #include "glm/trigonometric.hpp"
+#include "ituGL/utils/DearImGui.h"
 
 class HologramApplication : public Application
 {
@@ -19,6 +20,7 @@ protected:
     void Initialize() override;
     void Update() override;
     void Render() override;
+    void Cleanup() override;
 
 private:
     void InitializeGeometry();
@@ -28,6 +30,9 @@ private:
 private:
     // Camera
     Camera m_camera;
+
+    // GUI
+    DearImGui m_imGui;
 
     // Rotation
     float m_rotation = 0.0f;
@@ -46,8 +51,14 @@ private:
     ShaderProgram::Location m_viewProjectionUniform;
     ShaderProgram::Location m_cameraPositionUniform;
 
+    // Interaction Uniform Locations
+    ShaderProgram::Location m_planetSizeUniform;
+    ShaderProgram::Location m_ringSizeUniform;
+    ShaderProgram::Location m_animationSpeedUniform;
+    float m_planetSize = 0.35f;
+    float m_ringSize = 0.7f;
+    float m_animationSpeed = 0.6f;
 
     // Time
     float m_elapsedTime = 0.0f;
-
 };

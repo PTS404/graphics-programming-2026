@@ -1,4 +1,4 @@
-set(libraries itugl glad glfw ${APPLE_LIBRARIES})
+set(libraries itugl glad glfw imgui ${APPLE_LIBRARIES})
 
 file(GLOB_RECURSE target_inc "*.h" )
 file(GLOB_RECURSE target_src "*.cpp" )

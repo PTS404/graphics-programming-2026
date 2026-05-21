@@ -22,16 +22,23 @@ HologramApplication::HologramApplication()
     m_timeUniform(0),
     m_worldMatrixUniform(0),
     m_viewProjectionUniform(0),
-    m_cameraPositionUniform(0)
+    m_cameraPositionUniform(0),
+    m_planetSizeUniform(0),
+    m_ringSizeUniform(0),
+    m_animationSpeedUniform(0)
 {
 }
 
 void HologramApplication::Initialize()
 {
     Application::Initialize();
-    GetDevice().EnableFeature(GL_DEPTH_TEST);
+
+    m_imGui.Initialize(GetMainWindow());
+
     InitializeGeometry();
     InitializeShaders();
+
+    GetDevice().EnableFeature(GL_DEPTH_TEST);
 }
 
 void HologramApplication::Update()
@@ -43,6 +50,8 @@ void HologramApplication::Update()
 
 void HologramApplication::Render()
 {
+    Application::Render();
+
     GetDevice().Clear(true, Color(0.0f, 0.0f, 0.0f), true, 1.0f);
     m_hologramShader.Use();
 
@@ -59,9 +68,14 @@ void HologramApplication::Render()
     m_hologramShader.SetUniform(m_timeUniform, m_elapsedTime);
     m_hologramShader.SetUniform(m_cameraPositionUniform, cameraPosition);
 
+    // Set interaction uniforms
+    m_hologramShader.SetUniform(m_planetSizeUniform, m_planetSize);
+    m_hologramShader.SetUniform(m_ringSizeUniform, m_ringSize);
+    m_hologramShader.SetUniform(m_animationSpeedUniform, m_animationSpeed);
+
     // World Matrix
     glm::mat4 rotate = glm::rotate(m_rotation, glm::vec3(0, 1, 0));
-    glm::mat4 scale = glm::scale(glm::vec3(1.0f));
+    glm::mat4 scale = glm::scale(glm::vec3(4.0f));
 
     glm::mat4 worldMatrix = rotate * scale;
     m_hologramShader.SetUniform(m_worldMatrixUniform, worldMatrix);
@@ -73,11 +87,21 @@ void HologramApplication::Render()
     glm::mat4 viewProjectionMatrix = projection * view;
     m_hologramShader.SetUniform(m_viewProjectionUniform, viewProjectionMatrix);
 
-
     // Draw mesh
     m_mesh->DrawSubmesh(0);
 
-    Application::Render();
+    // User Interaction
+    m_imGui.BeginFrame();
+    ImGui::GetIO().FontGlobalScale = 2.0f;
+    ImGui::SliderFloat("Planet Size", &m_planetSize, 0.05f, 1.0f);
+    ImGui::SliderFloat("Ring Size", &m_ringSize, 0.0f, 2.0f);
+    ImGui::SliderFloat("Animation Speed", &m_animationSpeed, 0.0f, 5.0f);
+    m_imGui.EndFrame();
+}
+
+void HologramApplication::Cleanup() {
+    m_imGui.Cleanup();
+    Application::Cleanup();
 }
 
 void HologramApplication::InitializeGeometry()
@@ -155,6 +179,11 @@ void HologramApplication::InitializeShaders()
     m_worldMatrixUniform = m_hologramShader.GetUniformLocation("WorldMatrix");
     m_viewProjectionUniform = m_hologramShader.GetUniformLocation("ViewProjectionMatrix");
     m_cameraPositionUniform = m_hologramShader.GetUniformLocation("CameraPosition");
+
+    // Interaction Uniforms
+    m_planetSizeUniform = m_hologramShader.GetUniformLocation("PlanetSize");
+    m_ringSizeUniform = m_hologramShader.GetUniformLocation("RingSize");
+    m_animationSpeedUniform = m_hologramShader.GetUniformLocation("AnimationSpeed");
 }
 
 // Taken from exercise03

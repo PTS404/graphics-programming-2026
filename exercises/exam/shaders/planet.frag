@@ -6,6 +6,10 @@ uniform vec2 Resolution;
 uniform float Time;
 uniform vec3 CameraPosition;
 
+uniform float PlanetSize;
+uniform float RingSize;
+uniform float AnimationSpeed;
+
 // Randomization functions
 float hash(float x) {
     return fract(sin(x) * 43758.5453123);
@@ -39,7 +43,7 @@ float ring(vec3 position, vec2 t) {
 
 // Create object
 float createObject(vec3 position) {
-    float animationSpeed = Time * 0.6;
+    float animationSpeed = Time * AnimationSpeed;
 
     // Sphere position & rotation
     vec3 spherePosition = position;
@@ -53,13 +57,8 @@ float createObject(vec3 position) {
         noise(normalizedPosition.y * 10.0 - Time * 0.3) * 0.25 *
         noise(normalizedPosition.z * 20.0 + Time * 0.7) * 0.125;
     terrainNoise = terrainNoise / (0.5 * 0.25 * 0.125);
-//    float terrainNoise =
-//        noise(normalizedPosition.x * 2.0 + Time * 0.1) * 0.5 *
-//        noise(normalizedPosition.y * 4.0 - Time * 0.05) * 0.25 *
-//        noise(normalizedPosition.z * 8.0 + Time * 0.02) * 0.125;
-//    terrainNoise = terrainNoise /(0.5 * 0.25 * 0.125);
 
-    float baseRadius = 0.35;
+    float baseRadius = PlanetSize;
     float heightVariation = 0.02 * terrainNoise;
 
     // Create sphere
@@ -70,7 +69,7 @@ float createObject(vec3 position) {
     ringPosition.xz *= rotation2d(animationSpeed * 1.5); // Give ring orbiting rotation
     ringPosition.xy *= rotation2d(0.1); // Add tilt
     ringPosition.yz *= rotation2d(0.1); // Add tilt
-    float ring = ring(ringPosition, vec2(0.7, 0.04));
+    float ring = ring(ringPosition, vec2(RingSize, 0.04));
 
     // Combine and return the minimum distance
     return min(sphere, ring);
