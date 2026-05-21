@@ -95,6 +95,7 @@ void HologramApplication::Render()
     ImGui::GetIO().FontGlobalScale = 2.0f;
     ImGui::SliderFloat("Planet Size", &m_planetSize, 0.05f, 1.0f);
     ImGui::SliderFloat("Ring Size", &m_ringSize, 0.0f, 2.0f);
+    ImGui::Separator();
     ImGui::SliderFloat("Animation Speed", &m_animationSpeed, 0.0f, 5.0f);
     m_imGui.EndFrame();
 }
