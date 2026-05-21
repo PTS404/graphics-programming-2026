@@ -77,11 +77,11 @@ float createObject(vec3 position) {
 
 // Normal estimation using differences
 vec3 estimateNormal(vec3 position) {
-    vec2 e = vec2(0.001, 0.0);
+    vec2 offset = vec2(0.001, 0.0);
     return normalize(vec3(
-        createObject(position + e.xyy) - createObject(position - e.xyy),
-        createObject(position + e.yxy) - createObject(position - e.yxy),
-        createObject(position + e.yyx) - createObject(position - e.yyx)
+        createObject(position + offset.xyy) - createObject(position - offset.xyy),
+        createObject(position + offset.yxy) - createObject(position - offset.yxy),
+        createObject(position + offset.yyx) - createObject(position - offset.yyx)
     ));
 }
 
