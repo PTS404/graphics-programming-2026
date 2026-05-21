@@ -151,11 +151,8 @@ void main() {
     float fineScanline = sin(position.y * 0.8 + Time * 2.0) * 0.5 + 0.5;
     float scanlineMask = 0.7 + 0.3 * pow(scanline, 1.5) * fineScanline;
 
-    // Hologram flicker
-    float flicker = 1.0;
-    flicker *= 0.92 + 0.08 * sin(Time * 60.0); // high
-    flicker *= 0.95 + 0.05 * noise(Time * 8.0); // low
-    flicker *= 1.0- 0.3 * step(0.93, hash(floor(Time * 4.0))); // randomness
+    // Hologram flicker on y-axis (sin)
+    float flicker = 1.0 * (0.90 + 0.025 * sin(Time * 60.0));
 
     // Finalize output
     baseColor *= scanlineMask;
